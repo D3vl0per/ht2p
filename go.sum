@@ -1,5 +1,7 @@
-github.com/D3vl0per/crypt v0.0.2-0.20240106183401-213dbe24bb62 h1:lQM1ZIagQ08HZEm6Po8JWiCpkXNIvzngyyLr1++cr2w=
-github.com/D3vl0per/crypt v0.0.2-0.20240106183401-213dbe24bb62/go.mod h1:tJv39njnx3Y7n3M8Cv+/OxCeB6LH69VlB1sdh5SEPfU=
+github.com/D3vl0per/crypt v0.0.2 h1:PaB73FJuAZGqZ9eJYP/57sgI/C5YHOSBaYuzEzySMfk=
+github.com/D3vl0per/crypt v0.0.2/go.mod h1:tJv39njnx3Y7n3M8Cv+/OxCeB6LH69VlB1sdh5SEPfU=
+github.com/D3vl0per/crypt v0.0.3-0.20240107050820-dcdbb90b71ea h1:kmg0TUNtcLj39tr6curtrBzF3Fv35uDWx1h6l5wxzpc=
+github.com/D3vl0per/crypt v0.0.3-0.20240107050820-dcdbb90b71ea/go.mod h1:tJv39njnx3Y7n3M8Cv+/OxCeB6LH69VlB1sdh5SEPfU=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
 github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/cloudflare/circl v1.3.7 h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=

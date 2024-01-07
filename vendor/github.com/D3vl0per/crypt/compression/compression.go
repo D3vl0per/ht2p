@@ -55,6 +55,7 @@ type Compressor interface {
 	GetLevel() int
 	SetLevel(int)
 	GetName() string
+	GetModes() []int
 }
 
 type Gzip struct {
@@ -69,7 +70,7 @@ func (g *Gzip) Compress(in []byte) ([]byte, error) {
 
 	err := g.CompressStream(reader, &g.compressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return g.compressedBuff.Bytes(), nil
@@ -96,7 +97,7 @@ func (g *Gzip) Decompress(in []byte) ([]byte, error) {
 
 	err := g.DecompressStream(reader, &g.deCompressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return g.deCompressedBuff.Bytes(), nil
@@ -125,6 +126,18 @@ func (g *Gzip) GetName() string {
 	return "gzip"
 }
 
+func (g *Gzip) GetModes() []int {
+	return []int{
+		NoCompression,
+		BestSpeed,
+		ConstantCompression,
+		DefaultCompression,
+		BestCompression,
+		HuffmanOnly,
+		StatelessCompression,
+	}
+}
+
 type Zstd struct {
 	Level            int
 	compressedBuff   bytes.Buffer
@@ -137,7 +150,7 @@ func (z *Zstd) Compress(in []byte) ([]byte, error) {
 
 	err := z.CompressStream(reader, &z.compressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return z.compressedBuff.Bytes(), nil
@@ -163,7 +176,7 @@ func (z *Zstd) Decompress(in []byte) ([]byte, error) {
 
 	err := z.DecompressStream(reader, &z.deCompressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return z.deCompressedBuff.Bytes(), nil
@@ -192,6 +205,15 @@ func (z *Zstd) GetName() string {
 	return "zstd"
 }
 
+func (z *Zstd) GetModes() []int {
+	return []int{
+		ZstdSpeedFastest,
+		ZstdSpeedDefault,
+		ZstdSpeedBetterCompression,
+		ZstdSpeedBestCompression,
+	}
+}
+
 type Flate struct {
 	Level            int
 	compressedBuff   bytes.Buffer
@@ -204,7 +226,7 @@ func (f *Flate) Compress(in []byte) ([]byte, error) {
 
 	err := f.CompressStream(reader, &f.compressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return f.compressedBuff.Bytes(), nil
@@ -230,7 +252,7 @@ func (f *Flate) Decompress(in []byte) ([]byte, error) {
 
 	err := f.DecompressStream(reader, &f.deCompressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return f.deCompressedBuff.Bytes(), nil
@@ -255,6 +277,18 @@ func (f *Flate) GetName() string {
 	return "deflate"
 }
 
+func (f *Flate) GetModes() []int {
+	return []int{
+		NoCompression,
+		BestSpeed,
+		ConstantCompression,
+		DefaultCompression,
+		BestCompression,
+		HuffmanOnly,
+		StatelessCompression,
+	}
+}
+
 type Zlib struct {
 	Level            int
 	compressedBuff   bytes.Buffer
@@ -267,7 +301,7 @@ func (zl *Zlib) Compress(in []byte) ([]byte, error) {
 
 	err := zl.CompressStream(reader, &zl.compressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return zl.compressedBuff.Bytes(), nil
@@ -293,7 +327,7 @@ func (zl *Zlib) Decompress(in []byte) ([]byte, error) {
 
 	err := zl.DecompressStream(reader, &zl.deCompressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return zl.deCompressedBuff.Bytes(), nil
@@ -322,23 +356,38 @@ func (zl *Zlib) GetName() string {
 	return "zlib"
 }
 
+func (zl *Zlib) GetModes() []int {
+	return []int{
+		NoCompression,
+		BestSpeed,
+		ConstantCompression,
+		DefaultCompression,
+		BestCompression,
+		HuffmanOnly,
+		StatelessCompression,
+	}
+}
+
 type Brotli struct {
 	Level int
 	bw    *brotli.Writer
 	br    *brotli.Reader
+	compressedBuff   bytes.Buffer
+	deCompressedBuff bytes.Buffer
 }
 
 func (b *Brotli) Compress(in []byte) ([]byte, error) {
+	b.compressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var compressedBuff bytes.Buffer
 
-	err := b.CompressStream(reader, &compressedBuff)
+	err := b.CompressStream(reader, &b.compressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
-	return compressedBuff.Bytes(), nil
+	return b.compressedBuff.Bytes(), nil
 }
+
 func (b *Brotli) CompressStream(in io.Reader, out io.Writer) error {
 
 	b.bw.Reset(out)
@@ -353,17 +402,19 @@ func (b *Brotli) CompressStream(in io.Reader, out io.Writer) error {
 
 	return nil
 }
-func (b *Brotli) Decompress(in []byte) ([]byte, error) {
-	reader := bytes.NewReader(in)
-	var deCompressedBuff bytes.Buffer
 
-	err := b.DecompressStream(reader, &deCompressedBuff)
+func (b *Brotli) Decompress(in []byte) ([]byte, error) {
+	b.deCompressedBuff.Reset()
+	reader := bytes.NewReader(in)
+
+	err := b.DecompressStream(reader, &b.deCompressedBuff)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
-	return deCompressedBuff.Bytes(), nil
+	return b.deCompressedBuff.Bytes(), nil
 }
+
 func (b *Brotli) DecompressStream(in io.Reader, out io.Writer) error {
 
 	if err := b.br.Reset(in); err != nil {
@@ -389,176 +440,10 @@ func (b *Brotli) GetName() string {
 	return "br"
 }
 
-// In progress
-/*
-type FSE struct {
-	DecompressLimit   int
-	compressScratch   fse.Scratch
-	decompressScratch fse.Scratch
-}
-
-func (f *FSE) Compress(in []byte) ([]byte, error) {
-
-	f.compressScratch.Out = nil
-	_, err := fse.Compress(in, &f.compressScratch)
-	if err != nil {
-		return nil, err
+func (b *Brotli) GetModes() []int {
+	return []int{
+		BrotliBestSpeed,
+		BrotliDefaultCompression,
+		BrotliBestCompression,
 	}
-
-	return f.compressScratch.Out, nil
 }
-
-func (f *FSE) CompressStream(in io.Reader, out io.Writer) error {
-	data, err := io.ReadAll(in)
-	if err != nil {
-		return err
-	}
-
-	f.compressScratch.Out = nil
-	_, err = fse.Compress(data, &f.compressScratch)
-	if err != nil {
-		return err
-	}
-
-	_, err = out.Write(f.compressScratch.Out)
-	return err
-}
-
-func (f *FSE) Decompress(in []byte) ([]byte, error) {
-	f.decompressScratch.Out = nil
-	f.decompressScratch.DecompressLimit = f.DecompressLimit
-
-	_, err := fse.Decompress(in, &f.decompressScratch)
-	if err != nil {
-		return nil, err
-	}
-	return f.decompressScratch.Out, nil
-}
-
-func (f *FSE) DecompressStream(in io.Reader, out io.Writer) error {
-	data, err := io.ReadAll(in)
-	if err != nil {
-		return err
-	}
-
-	f.decompressScratch.Out = nil
-	f.decompressScratch.DecompressLimit = f.DecompressLimit
-	_, err = fse.Decompress(data, &f.decompressScratch)
-	if err != nil {
-		return err
-	}
-
-	_, err = out.Write(f.decompressScratch.Out)
-	return err
-}
-
-func (f *FSE) GetLevel() int {
-	return f.DecompressLimit
-}
-
-func (f *FSE) SetLevel(level int) {
-	f.DecompressLimit = level
-}
-
-func (f *FSE) GetName() string {
-	return "fse"
-}
-
-type Huff0X1 struct {
-	compressScratch   huff0.Scratch
-	decompressScratch huff0.Scratch
-}
-
-func (h *Huff0X1) Compress(in []byte) ([]byte, error) {
-	h.decompressScratch.Out = nil
-	h.decompressScratch.OutData = nil
-	h.decompressScratch.OutTable = nil
-	h.decompressScratch.Reuse = huff0.ReusePolicyNone
-
-	_, _, err := huff0.Compress1X(in, &h.compressScratch)
-	if err != nil {
-		return nil, err
-	}
-
-	return h.compressScratch.Out, nil
-}
-
-func (h *Huff0X1) CompressStream(in io.Reader, out io.Writer) error {
-	h.decompressScratch.Out = nil
-	h.decompressScratch.OutData = nil
-	h.decompressScratch.OutTable = nil
-	h.decompressScratch.Reuse = huff0.ReusePolicyNone
-
-	data, err := io.ReadAll(in)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = huff0.Compress1X(data, &h.compressScratch)
-	if err != nil {
-		return err
-	}
-
-	_, err = out.Write(h.compressScratch.Out)
-	return err
-}
-
-func (h *Huff0X1) Decompress(in []byte) ([]byte, error) {
-	h.decompressScratch.Out = nil
-	h.decompressScratch.OutData = nil
-	h.decompressScratch.OutTable = nil
-	h.decompressScratch.Reuse = huff0.ReusePolicyNone
-
-	var err error
-	var remain []byte
-	_, remain, err = huff0.ReadTable(in, &h.decompressScratch)
-	if err != nil {
-		return nil, nil
-	}
-
-	out, err := h.decompressScratch.Decompress1X(remain)
-	if err != nil {
-		return nil, nil
-	}
-
-	return out, nil
-}
-
-func (h *Huff0X1) DecompressStream(in io.Reader, out io.Writer) error {
-	h.decompressScratch.Out = nil
-	h.decompressScratch.OutData = nil
-	h.decompressScratch.OutTable = nil
-	h.decompressScratch.Reuse = huff0.ReusePolicyNone
-
-	data, err := io.ReadAll(in)
-	if err != nil {
-		return err
-	}
-
-	var remain []byte
-	_, remain, err = huff0.ReadTable(data, &h.decompressScratch)
-	if err != nil {
-		return err
-	}
-
-	raw, err := h.decompressScratch.Decompress1X(remain)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(out, bytes.NewReader(raw))
-	return err
-}
-
-func (h *Huff0X1) GetLevel() int {
-	return 0
-}
-
-func (h *Huff0X1) SetLevel(level int) {
-
-}
-
-func (h *Huff0X1) GetName() string {
-	return "huff0"
-}
-*/

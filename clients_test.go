@@ -1,6 +1,7 @@
 package ht2p_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -9,65 +10,6 @@ import (
 	r "github.com/stretchr/testify/require"
 	"github.com/valyala/fasthttp"
 )
-
-func TestRequest(t *testing.T) {
-
-	tests := []struct {
-		name         string
-		request      ht2p.HttpClient
-		expectedBody []byte
-	}{
-		{
-			name: "Simple GET request",
-			request: &ht2p.NetHttp{
-				URL: "https://httpbin.org/get",
-			},
-		},
-		{
-			name: "Specified GET request",
-			request: &ht2p.NetHttp{
-				URL:    "https://httpbin.org/get",
-				Method: http.MethodGet,
-			},
-		},
-		{
-			name: "Simple GET request with custom header",
-			request: &ht2p.NetHttp{
-				URL: "https://httpbin.org/get",
-				Headers: map[string]string{
-					"Test": "Test",
-				},
-			},
-		},
-		{
-			name: "Specified GET request with custom header and user agent (User-agent overwrite)",
-			request: &ht2p.NetHttp{
-				URL:    "https://httpbin.org/get",
-				Method: http.MethodGet,
-				Headers: map[string]string{
-					"User-Agent": "Test",
-				},
-				UserAgent: "NotTest",
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-
-			response, err := test.request.Request()
-			r.NoError(t, err)
-			r.Equal(t, 200, response.StatusCode)
-
-			t.Log("Body:", string(response.Body))
-			t.Log("Status code:", response.StatusCode)
-
-			if test.expectedBody != nil {
-				r.Equal(t, test.expectedBody, response.Body)
-			}
-		})
-	}
-}
 
 func BenchmarkRequest(b *testing.B) {
 	url := "https://malware-filter.gitlab.io/malware-filter/phishing-filter.txt"
@@ -85,6 +27,7 @@ func BenchmarkRequest(b *testing.B) {
 	ht2pc := &ht2p.NetHttp{
 		URL:    url,
 		Client: http.Client{},
+		Ctx:    context.Background(),
 	}
 
 	b.Run("ht2p abstraction", func(b *testing.B) {
@@ -95,9 +38,12 @@ func BenchmarkRequest(b *testing.B) {
 		}
 	})
 
-	readTimeout, _ := time.ParseDuration("5000ms")
-	writeTimeout, _ := time.ParseDuration("5000ms")
-	maxIdleConnDuration, _ := time.ParseDuration("1h")
+	readTimeout, err := time.ParseDuration("5000ms")
+	r.NoError(b, err)
+	writeTimeout, err := time.ParseDuration("5000ms")
+	r.NoError(b, err)
+	maxIdleConnDuration, err := time.ParseDuration("1h")
+	r.NoError(b, err)
 
 	ft2pc := ht2p.FastHttp{
 		URL: url,

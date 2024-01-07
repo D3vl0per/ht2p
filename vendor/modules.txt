@@ -1,4 +1,4 @@
-# github.com/D3vl0per/crypt v0.0.2-0.20240106183401-213dbe24bb62
+# github.com/D3vl0per/crypt v0.0.3-0.20240107050820-dcdbb90b71ea
 ## explicit; go 1.21.3
 github.com/D3vl0per/crypt/compression
 github.com/D3vl0per/crypt/generic
