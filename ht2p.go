@@ -138,28 +138,6 @@ func defaultParameterSet(r *NetHttp) (*NetHttp, error) {
 		rr.Headers = make(map[string]string)
 	}
 
-	if r.Compressor != nil {
-		rr.Headers["Accept-Encoding"] = r.Compressor.GetName()
-		switch r.Compressor.GetName() {
-		case "gzip":
-			rr.Compressor.SetLevel(compression.BestSpeed)
-			if rr.Client.Transport != nil {
-				transport, ok := rr.Client.Transport.(*http.Transport)
-				if !ok {
-					return &NetHttp{}, errors.New("failed to cast transport to http.Transport [http client]")
-				}
-				transport.DisableCompression = false
-				rr.Client.Transport = gzhttp.Transport(transport, gzhttp.TransportEnableGzip(true))
-			} else {
-				rr.Client.Transport = gzhttp.Transport(&http.Transport{
-					DisableCompression: false,
-				})
-			}
-		case "br":
-			rr.Compressor.SetLevel(compression.BrotliBestSpeed)
-		}
-	}
-
 	if r.UserAgent != "" {
 		rr.Headers["User-Agent"] = r.UserAgent
 	}
@@ -168,8 +146,34 @@ func defaultParameterSet(r *NetHttp) (*NetHttp, error) {
 		rr.ExpectedStatusCode = http.StatusOK
 	}
 
-	return rr, nil
+	if r.Compressor == nil {
+		return rr, nil
+	}
 
+	compressorName := r.Compressor.GetName()
+	rr.Headers["Accept-Encoding"] = compressorName
+
+	if compressorName == "br" {
+		rr.Compressor.SetLevel(compression.BrotliBestSpeed)
+		return rr, nil
+	}
+
+	rr.Compressor.SetLevel(compression.BestSpeed)
+	if rr.Client.Transport == nil {
+		rr.Client.Transport = &http.Transport{
+			DisableCompression: false,
+		}
+
+	}
+
+	transport, ok := rr.Client.Transport.(*http.Transport)
+	if !ok {
+		return &NetHttp{}, errors.New("failed to cast transport to http.Transport [http client]")
+	}
+
+	transport.DisableCompression = false
+	rr.Client.Transport = gzhttp.Transport(transport, gzhttp.TransportEnableGzip(true))
+	return rr, nil
 }
 
 func headerToMap(header http.Header) map[string][]string {

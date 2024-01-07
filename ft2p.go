@@ -1,13 +1,20 @@
 package ht2p
 
 import (
-	"bytes"
 	"errors"
 	"net/http"
 
-	"github.com/D3vl0per/crypt/compression"
 	"github.com/D3vl0per/crypt/generic"
 	"github.com/valyala/fasthttp"
+)
+
+type compressors int
+
+const (
+	All compressors = iota
+	Deflate
+	Gzip
+	Brotil
 )
 
 type FastHttp struct {
@@ -18,7 +25,7 @@ type FastHttp struct {
 	Headers            map[string]string
 	ExpectedStatusCode int
 	Client             fasthttp.Client
-	Compressor         compression.Compressor
+	Compressor         compressors
 	UserAgent          string
 	MaxRedirects       int
 }
@@ -63,30 +70,16 @@ func (f *FastHttp) Request() (Response, error) {
 		Headers:    fastHeaderToMap(&response.Header),
 	}
 
-	respBody := response.Body()
+	responseStruct.Body = response.Body()
 
 	if responseStruct.StatusCode != f.ExpectedStatusCode {
-		responseStruct.Body = respBody
 		return responseStruct,
 			errors.New(
 				generic.StrCnct([]string{
 					"expected status code mismatch [fasthttp client]: ", string(response.Header.StatusMessage()),
-					" body: ", string(respBody)}...))
+					" body: ", string(responseStruct.Body)}...))
 	}
 
-	if f.Compressor == nil {
-		responseStruct.Body = respBody
-		return responseStruct, nil
-	}
-
-	if !bytes.Contains(response.Header.Peek("Content-Encoding"), []byte(f.Compressor.GetName())) {
-		return responseStruct, errors.New(generic.StrCnct([]string{"requested decompressor mismatch by response content header : ", string(respBody)}...))
-	}
-
-	responseStruct.Body, err = ff.Compressor.Decompress(respBody)
-	if err != nil {
-		return responseStruct, errors.New(generic.StrCnct([]string{"failed to decompress response body [crypt compression]: ", err.Error()}...))
-	}
 	return responseStruct, nil
 }
 
@@ -125,16 +118,6 @@ func defaultFastParameterSet(f *FastHttp) (*FastHttp, error) {
 		ff.Headers = make(map[string]string)
 	}
 
-	if f.Compressor != nil {
-		ff.Headers["Accept-Encoding"] = f.Compressor.GetName()
-		switch f.Compressor.GetName() {
-		case "gzip":
-			ff.Compressor.SetLevel(compression.BestSpeed)
-		case "br":
-			ff.Compressor.SetLevel(compression.BrotliBestSpeed)
-		}
-	}
-
 	if f.UserAgent != "" {
 		ff.Headers["User-Agent"] = f.UserAgent
 	}
@@ -142,6 +125,23 @@ func defaultFastParameterSet(f *FastHttp) (*FastHttp, error) {
 	if f.ExpectedStatusCode == 0 {
 		ff.ExpectedStatusCode = fasthttp.StatusOK
 	}
+
+	if f.Compressor == All {
+		ff.Headers["Accept-Encoding"] = "gzip, deflate, br"
+		return ff, nil
+	}
+
+	if f.Compressor == Brotil {
+		ff.Headers["Accept-Encoding"] = "br"
+		return ff, nil
+	}
+
+	if f.Compressor == Gzip {
+		ff.Headers["Accept-Encoding"] = "gzip"
+		return ff, nil
+	}
+
+	ff.Headers["Accept-Encoding"] = "deflate"
 
 	return ff, nil
 }

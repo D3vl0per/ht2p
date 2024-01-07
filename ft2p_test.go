@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/D3vl0per/crypt/compression"
 	"github.com/D3vl0per/ht2p"
 	r "github.com/stretchr/testify/require"
 	"github.com/valyala/fasthttp"
@@ -57,7 +56,7 @@ func TestFastRequest(t *testing.T) {
 			name: "Simple GET request with Brotil compression",
 			request: &ht2p.FastHttp{
 				URL:        "https://httpbin.org/brotli",
-				Compressor: &compression.Brotli{},
+				Compressor: ht2p.Brotil,
 				UserAgent:  "ht2p/0.0.1",
 			},
 		},
@@ -65,7 +64,15 @@ func TestFastRequest(t *testing.T) {
 			name: "Simple GET request with Gzip compression",
 			request: &ht2p.FastHttp{
 				URL:        "https://httpbin.org/gzip",
-				Compressor: &compression.Gzip{},
+				Compressor: ht2p.Gzip,
+				UserAgent:  "ht2p/0.0.1",
+			},
+		},
+		{
+			name: "Simple GET request with DEFLATE compression",
+			request: &ht2p.FastHttp{
+				URL:        "https://httpbin.org/gzip",
+				Compressor: ht2p.Deflate,
 				UserAgent:  "ht2p/0.0.1",
 			},
 		},

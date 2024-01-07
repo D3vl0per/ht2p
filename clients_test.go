@@ -12,7 +12,7 @@ import (
 )
 
 func BenchmarkRequest(b *testing.B) {
-	url := "https://malware-filter.gitlab.io/malware-filter/phishing-filter.txt"
+	url := "https://1.1.1.1"
 
 	client := http.Client{}
 
