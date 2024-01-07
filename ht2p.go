@@ -50,7 +50,7 @@ func (n *NetHttp) Request() (Response, error) {
 	}
 
 	responseStruct := Response{
-		Headers:    response.Header,
+		Headers:    headerToMap(response.Header),
 		StatusCode: response.StatusCode,
 	}
 
@@ -61,19 +61,20 @@ func (n *NetHttp) Request() (Response, error) {
 	if response.StatusCode != nn.ExpectedStatusCode {
 		rawBody, err := io.ReadAll(response.Body)
 		if err != nil {
-			return Response{},
+			return responseStruct,
 				errors.New(
 					generic.StrCnct([]string{
 						"failed to read response body [body reader]: ", err.Error(),
 						" body error: ", err.Error()}...))
 		} else {
-			return Response{}, errors.New(generic.StrCnct([]string{"expected status code mismatch [http client]: ", response.Status, " body: ", string(rawBody)}...))
+			responseStruct.Body = rawBody
+			return responseStruct, errors.New(generic.StrCnct([]string{"expected status code mismatch [http client]"}...))
 		}
 	}
 
 	rawBody, err := io.ReadAll(response.Body)
 	if err != nil {
-		return Response{}, err
+		return responseStruct, err
 	}
 
 	if nn.Compressor == nil {
@@ -88,14 +89,14 @@ func (n *NetHttp) Request() (Response, error) {
 	}
 
 	if !strings.Contains(response.Header.Get("Content-Encoding"), nn.Compressor.GetName()) {
-		return Response{}, errors.New(
+		return responseStruct, errors.New(
 			generic.StrCnct([]string{
 				"requested decompressor mismatch by response content header: ", err.Error()}...))
 	}
 
 	responseStruct.Body, err = nn.Compressor.Decompress(rawBody)
 	if err != nil {
-		return Response{}, errors.New(generic.StrCnct(
+		return responseStruct, errors.New(generic.StrCnct(
 			[]string{
 				"failed to decompress response body [crypt compression]: ", err.Error()}...))
 	}
@@ -169,4 +170,12 @@ func defaultParameterSet(r *NetHttp) (*NetHttp, error) {
 
 	return rr, nil
 
+}
+
+func headerToMap(header http.Header) map[string][]string {
+	headers := make(map[string][]string)
+	for key, value := range header {
+		headers[key] = append(headers[key], value...)
+	}
+	return headers
 }

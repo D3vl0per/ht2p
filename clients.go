@@ -2,7 +2,6 @@ package ht2p
 
 import (
 	"errors"
-	"net/http"
 	"net/url"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -10,7 +9,7 @@ import (
 
 type Response struct {
 	Body       []byte
-	Headers    http.Header
+	Headers    map[string][]string
 	StatusCode int
 }
 

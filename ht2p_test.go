@@ -69,7 +69,7 @@ func TestRequest(t *testing.T) {
 				Compressor: &compression.Brotli{},
 				UserAgent:  "ht2p/0.0.1",
 				Client:     client,
-				Ctx:       ctx,
+				Ctx:        ctx,
 			},
 		},
 		{
@@ -79,7 +79,7 @@ func TestRequest(t *testing.T) {
 				Compressor: &compression.Gzip{},
 				UserAgent:  "ht2p/0.0.1",
 				Client:     client,
-				Ctx:       ctx,
+				Ctx:        ctx,
 			},
 		},
 		{
@@ -98,7 +98,7 @@ func TestRequest(t *testing.T) {
 						return nil
 					},
 				},
-				Ctx:       ctx,
+				Ctx: ctx,
 			},
 		},
 	}

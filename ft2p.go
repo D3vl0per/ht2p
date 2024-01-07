@@ -60,12 +60,14 @@ func (f *FastHttp) Request() (Response, error) {
 
 	responseStruct := Response{
 		StatusCode: response.StatusCode(),
+		Headers:    fastHeaderToMap(&response.Header),
 	}
 
 	respBody := response.Body()
 
 	if responseStruct.StatusCode != f.ExpectedStatusCode {
-		return Response{},
+		responseStruct.Body = respBody
+		return responseStruct,
 			errors.New(
 				generic.StrCnct([]string{
 					"expected status code mismatch [fasthttp client]: ", string(response.Header.StatusMessage()),
@@ -78,12 +80,12 @@ func (f *FastHttp) Request() (Response, error) {
 	}
 
 	if !bytes.Contains(response.Header.Peek("Content-Encoding"), []byte(f.Compressor.GetName())) {
-		return Response{}, errors.New(generic.StrCnct([]string{"requested decompressor mismatch by response content header : ", string(respBody)}...))
+		return responseStruct, errors.New(generic.StrCnct([]string{"requested decompressor mismatch by response content header : ", string(respBody)}...))
 	}
 
 	responseStruct.Body, err = ff.Compressor.Decompress(respBody)
 	if err != nil {
-		return Response{}, errors.New(generic.StrCnct([]string{"failed to decompress response body [crypt compression]: ", err.Error()}...))
+		return responseStruct, errors.New(generic.StrCnct([]string{"failed to decompress response body [crypt compression]: ", err.Error()}...))
 	}
 	return responseStruct, nil
 }
@@ -142,4 +144,12 @@ func defaultFastParameterSet(f *FastHttp) (*FastHttp, error) {
 	}
 
 	return ff, nil
+}
+
+func fastHeaderToMap(header *fasthttp.ResponseHeader) map[string][]string {
+	headers := make(map[string][]string)
+	header.VisitAll(func(key, value []byte) {
+		headers[string(key)] = append(headers[string(key)], string(value))
+	})
+	return headers
 }
