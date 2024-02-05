@@ -4,7 +4,7 @@ go 1.21.5
 
 require (
 	github.com/D3vl0per/crypt v0.0.3-0.20240107050820-dcdbb90b71ea
-	github.com/klauspost/compress v1.17.4
+	github.com/klauspost/compress v1.17.6
 	github.com/stretchr/testify v1.8.4
 	github.com/valyala/fasthttp v1.51.0
 )
